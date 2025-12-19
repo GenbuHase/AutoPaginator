@@ -9,6 +9,7 @@ export function findContentContainer(doc: Document): HTMLElement | null {
     '#main-content',
     '.main-content',
     '.post-content',
+    ".article-body",
     '.blog-posts',
     '.search-results'
   ];
