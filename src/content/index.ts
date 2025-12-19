@@ -67,36 +67,26 @@ async function init() {
   setupHistoryObserver(firstPageWrapper, originalUrl);
 
   // 3. Setup Trigger
-  createSentinel();
+  setupNextLinkObserver(nextLink);
 }
 
 
-function createSentinel() {
-  const sentinel = document.createElement('div');
-  sentinel.id = 'autopaginator-sentinel';
-  sentinel.textContent = 'Loading more content...';
-  sentinel.style.textAlign = 'center';
-  sentinel.style.padding = '20px';
-  sentinel.style.opacity = '0.5';
+function setupNextLinkObserver(element: HTMLElement) {
+  const observer = new IntersectionObserver((entries) => {
+    const entry = entries[0];
+    if (entry?.isIntersecting && !isLoading && nextPageUrl) {
+      triggerFetch();
+      observer.disconnect(); // Stop observing this one once triggered
+    }
+  }, {
+    root: null,
+    rootMargin: '400px', // Trigger well before the link hits the viewport
+    threshold: 0.1
+  });
   
-  if (contentContainer) {
-    contentContainer.appendChild(sentinel);
-    
-    const observer = new IntersectionObserver(handleIntersect, {
-      root: null,
-      rootMargin: '400px', // Trigger well before bottom
-      threshold: 0.1
-    });
-    observer.observe(sentinel);
-  }
+  observer.observe(element);
 }
 
-async function handleIntersect(entries: IntersectionObserverEntry[]) {
-  const entry = entries[0];
-  if (entry?.isIntersecting && !isLoading && nextPageUrl) {
-    await triggerFetch();
-  }
-}
 
 async function triggerFetch() {
   if (!nextPageUrl || isLoading) return;
@@ -143,10 +133,6 @@ function processNextPage(doc: Document, url: string) {
     });
     pageWrapper.appendChild(fragment);
     
-    // Remove old triggers
-    const oldSentinel = document.getElementById('autopaginator-sentinel');
-    if (oldSentinel) oldSentinel.remove();
-    
     // Determine insertion point
     if (currentSiteConfig?.insertBefore) {
       const before = getElementByXPath(currentSiteConfig.insertBefore, document);
@@ -165,7 +151,7 @@ function processNextPage(doc: Document, url: string) {
     const newNextLink = findNextPageLink(doc, currentSiteConfig?.nextLink);
     if (newNextLink) {
       nextPageUrl = newNextLink.href;
-      createSentinel();
+      setupNextLinkObserver(newNextLink);
     } else {
       nextPageUrl = null;
       const endMsg = document.createElement('div');
