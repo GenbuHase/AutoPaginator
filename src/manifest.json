@@ -2,7 +2,7 @@
   "manifest_version": 3,
 
   "name": "Auto Paginator",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "複数ページにわたるWebページを1枚に自動で連結し、スクロールだけで閲覧可能にするページ読み込み支援拡張機能",
 
   "action": {

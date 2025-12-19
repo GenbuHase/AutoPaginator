@@ -54,6 +54,8 @@ async function init() {
   // BUGFIX: Set up observer for the first page too
   const originalUrl = location.href;
   const firstPageWrapper = document.createElement('div');
+  // Copy classes from the original container to the wrapper to preserve styling
+  firstPageWrapper.className = contentContainer.className;
   firstPageWrapper.id = 'autopaginator-first-page';
   firstPageWrapper.dataset.url = originalUrl;
   
@@ -121,6 +123,7 @@ function processNextPage(doc: Document, url: string) {
   
   if (newContainer && contentContainer) {
     const pageWrapper = document.createElement('div');
+    pageWrapper.className = newContainer.className;
     pageWrapper.classList.add('autopaginator-page');
     pageWrapper.dataset.url = url;
     pageWrapper.style.marginTop = '20px';
