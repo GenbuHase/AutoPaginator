@@ -28,7 +28,7 @@ async function init() {
   // Find matching SITEINFO
   currentSiteConfig = settings.siteInfo.find(config => {
     try {
-      return new RegExp(config.url).test(url);
+      return config.enabled && new RegExp(config.url).test(url);
     } catch (e) {
       console.error("Invalid regex in SITEINFO:", config.url, e);
       return false;

@@ -1,6 +1,7 @@
 export interface SiteConfig {
   name: string;
   url: string;
+  enabled: boolean;
   exampleUrl?: string;
   pageElement: string; // XPath
   nextLink: string;   // XPath
