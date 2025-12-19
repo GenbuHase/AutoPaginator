@@ -79,22 +79,34 @@
         <div 
           v-for="(config, index) in settings.siteInfo" 
           :key="index" 
-          class="mb-2 p-2 border rounded hover:bg-gray-50 group relative cursor-move"
+          class="mb-2 p-2 border rounded hover:bg-gray-50 group relative cursor-move flex items-center gap-2"
           draggable="true"
           @dragstart="handleDragStart(index)"
           @dragover.prevent="handleDragOver(index)"
           @drop="handleDrop"
-          :class="{ 'opacity-50 border-indigo-400 border-dashed bg-indigo-50': draggedIndex === index }"
+          :class="{ 
+            'opacity-50 border-indigo-400 border-dashed bg-indigo-50': draggedIndex === index,
+            'bg-gray-100 opacity-75': !config.enabled
+          }"
         >
-          <div class="flex justify-between items-center">
-            <div class="truncate pr-2 pointer-events-none">
-              <div class="font-bold text-xs truncate">{{ config.name }}</div>
-              <div class="text-[10px] text-gray-500 font-mono truncate">{{ config.url }}</div>
+          <!-- Enable/Disable Toggle -->
+          <button 
+            @click.stop="config.enabled = !config.enabled"
+            class="w-4 h-4 rounded-full border transition-colors flex-shrink-0"
+            :class="config.enabled ? 'bg-green-500 border-green-600' : 'bg-gray-300 border-gray-400'"
+            :title="config.enabled ? 'Enabled' : 'Disabled'"
+          ></button>
+
+          <div class="flex-1 min-w-0 pointer-events-none">
+            <div class="flex items-center gap-1">
+              <div class="font-bold text-xs truncate" :class="{ 'line-through text-gray-400': !config.enabled }">{{ config.name }}</div>
             </div>
-            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button @click.stop="editSite(index)" class="text-indigo-600 hover:text-indigo-800 text-xs">Edit</button>
-              <button @click.stop="deleteSiteConfig(index)" class="text-red-600 hover:text-red-800 text-xs">Del</button>
-            </div>
+            <div class="text-[10px] text-gray-500 font-mono truncate">{{ config.url }}</div>
+          </div>
+          
+          <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+            <button @click.stop="editSite(index)" class="text-indigo-600 hover:text-indigo-800 text-xs">Edit</button>
+            <button @click.stop="deleteSiteConfig(index)" class="text-red-600 hover:text-red-800 text-xs">Del</button>
           </div>
         </div>
       </div>
@@ -107,7 +119,13 @@
       <div class="space-y-2 max-h-[400px] overflow-y-auto pr-2">
         <div>
           <label class="block text-[11px] text-gray-500 mb-1">Name</label>
-          <input v-model="form.name" type="text" placeholder="e.g., Blog Next Page" class="w-full p-2 border rounded" />
+          <div class="flex gap-2 items-center">
+            <input v-model="form.name" type="text" placeholder="e.g., Blog Next Page" class="flex-1 p-2 border rounded" />
+            <label class="flex items-center gap-1 cursor-pointer">
+              <input type="checkbox" v-model="form.enabled" />
+              <span class="text-[10px] text-gray-600">Enabled</span>
+            </label>
+          </div>
         </div>
         <div>
           <label class="block text-[11px] text-gray-500 mb-1">URL (Regex)</label>
@@ -158,6 +176,7 @@
   const form = ref<SiteConfig>({
     name: '',
     url: '',
+    enabled: true,
     exampleUrl: '',
     pageElement: '',
     nextLink: '',
@@ -247,6 +266,7 @@
     form.value = {
       name: '',
       url: `^https?://${currentDomain.value}/.*`,
+      enabled: true,
       exampleUrl: '',
       pageElement: '',
       nextLink: '',
@@ -262,6 +282,7 @@
       form.value = {
         name: config.name,
         url: config.url,
+        enabled: config.enabled !== false, // Default to true if somehow missing
         exampleUrl: config.exampleUrl || '',
         pageElement: config.pageElement,
         nextLink: config.nextLink,
