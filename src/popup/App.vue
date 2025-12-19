@@ -76,15 +76,24 @@
           No configurations found.
         </div>
 
-        <div v-for="(config, index) in settings.siteInfo" :key="index" class="mb-2 p-2 border rounded hover:bg-gray-50 group">
+        <div 
+          v-for="(config, index) in settings.siteInfo" 
+          :key="index" 
+          class="mb-2 p-2 border rounded hover:bg-gray-50 group relative cursor-move"
+          draggable="true"
+          @dragstart="handleDragStart(index)"
+          @dragover.prevent="handleDragOver(index)"
+          @drop="handleDrop"
+          :class="{ 'opacity-50 border-indigo-400 border-dashed bg-indigo-50': draggedIndex === index }"
+        >
           <div class="flex justify-between items-center">
-            <div class="truncate pr-2">
+            <div class="truncate pr-2 pointer-events-none">
               <div class="font-bold text-xs truncate">{{ config.name }}</div>
               <div class="text-[10px] text-gray-500 font-mono truncate">{{ config.url }}</div>
             </div>
             <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button @click="editSite(index)" class="text-indigo-600 hover:text-indigo-800">Edit</button>
-              <button @click="deleteSiteConfig(index)" class="text-red-600 hover:text-red-800">Del</button>
+              <button @click.stop="editSite(index)" class="text-indigo-600 hover:text-indigo-800 text-xs">Edit</button>
+              <button @click.stop="deleteSiteConfig(index)" class="text-red-600 hover:text-red-800 text-xs">Del</button>
             </div>
           </div>
         </div>
@@ -140,6 +149,9 @@
   const showSiteInfoManager = ref(false);
   const blacklistInput = ref('');
   
+  // Drag and drop state
+  const draggedIndex = ref<number | null>(null);
+
   // Editing state
   const editingSite = ref(false);
   const editingIndex = ref(-1);
@@ -205,6 +217,28 @@
       }
       blacklistInput.value = settings.value.blacklist.join('\n');
     }
+  }
+
+  // Drag and Drop handlers
+  function handleDragStart(index: number) {
+    draggedIndex.value = index;
+  }
+
+  function handleDragOver(index: number) {
+    if (draggedIndex.value === null || draggedIndex.value === index) return;
+    
+    // Move item in array while dragging for real-time feedback
+    const items = [...settings.value.siteInfo];
+    const item = items.splice(draggedIndex.value, 1)[0];
+    if (item) {
+      items.splice(index, 0, item);
+      settings.value.siteInfo = items;
+      draggedIndex.value = index;
+    }
+  }
+
+  function handleDrop() {
+    draggedIndex.value = null;
   }
 
   // Form handling
