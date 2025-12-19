@@ -21,6 +21,7 @@ export const storage = {
       return defaultSettings;
     }
   },
+
   set: async (settings: Partial<AppSettings>) => {
     try {
       await chrome.storage.local.set(settings as { [key: string]: any });

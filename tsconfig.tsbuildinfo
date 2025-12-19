@@ -1,11 +1,11 @@
 {
-    "version": "5.6.3",
-    
-    "root": [
-        "./src/content/index.ts",
-        "./src/popup/main.ts",
-        "./src/utils/dom.ts",
-        "./src/utils/next-page.ts",
-        "./src/popup/app.vue"
-    ]
+  "version": "5.6.3",
+
+  "root": [
+    "./src/content/index.ts",
+    "./src/popup/main.ts",
+    "./src/utils/dom.ts",
+    "./src/utils/next-page.ts",
+    "./src/popup/app.vue"
+  ]
 }

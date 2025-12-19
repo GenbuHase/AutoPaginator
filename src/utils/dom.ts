@@ -15,6 +15,7 @@ export function findContentContainer(doc: Document): HTMLElement | null {
 
   for (const selector of candidates) {
     const el = doc.querySelector(selector);
+
     // Rough check: must have some content.
     if (el instanceof HTMLElement && el.innerText.length > 100) {
       return el;
@@ -35,11 +36,11 @@ export function findContentContainer(doc: Document): HTMLElement | null {
  * e.g. remove the new next button, remove headers/footers if they were captured?
  */
 export function cleanContent(element: HTMLElement) {
-    // Remove scripts
-    const scripts = element.querySelectorAll('script');
-    scripts.forEach(s => s.remove());
-    
-    // Remove next/prev links to avoid duplicates
-    // (This might be too aggressive if valid links are removed, but for infinite scroll it's usually desired)
-    // We can filter this later.
+  // Remove scripts
+  const scripts = element.querySelectorAll('script');
+  scripts.forEach(s => s.remove());
+  
+  // Remove next/prev links to avoid duplicates
+  // (This might be too aggressive if valid links are removed, but for infinite scroll it's usually desired)
+  // We can filter this later.
 }

@@ -1,26 +1,26 @@
 import { findNextPageLink } from '../utils/next-page';
 import { findContentContainer } from '../utils/dom';
+import { storage, isBlacklisted } from '../utils/storage';
 
 let isLoading = false;
 let nextPageUrl: string | null = null;
 let contentContainer: HTMLElement | null = null;
+
 // Store visited URLs to prevent loops
 const visitedUrls = new Set<string>();
-
-import { storage, isBlacklisted } from '../utils/storage';
 
 async function init() {
   console.log("[AutoPaginator] Initializing...");
   
   const settings = await storage.get();
   if (!settings.enabled) {
-     console.log("[AutoPaginator] Disabled globally.");
-     return;
+    console.log("[AutoPaginator] Disabled globally.");
+    return;
   }
   
   if (isBlacklisted(location.href, settings.blacklist)) {
-     console.log("[AutoPaginator] Disabled on this domain.");
-     return;
+    console.log("[AutoPaginator] Disabled on this domain.");
+    return;
   }
 
   // 1. Find Next Page Link
@@ -29,13 +29,14 @@ async function init() {
     console.log("[AutoPaginator] No next page link found.");
     return;
   }
+
   nextPageUrl = nextLink.href;
   visitedUrls.add(location.href);
 
   // 2. Find Main Content Container
   contentContainer = findContentContainer(document);
   if (!contentContainer) {
-    // console.warn("[AutoPaginator] Content container not found. Aborting."); // Silent fail is better for generic tools?
+    console.warn("[AutoPaginator] Content container not found. Aborting.");
     return;
   }
 
@@ -67,9 +68,9 @@ async function handleIntersect(entries: IntersectionObserverEntry[]) {
   const entry = entries[0];
   if (entry?.isIntersecting && !isLoading && nextPageUrl) {
     if (visitedUrls.has(nextPageUrl)) {
-        console.warn("[AutoPaginator] Loop detected or already visited:", nextPageUrl);
-        nextPageUrl = null;
-        return;
+      console.warn("[AutoPaginator] Loop detected or already visited:", nextPageUrl);
+      nextPageUrl = null;
+      return;
     }
 
     isLoading = true;
@@ -113,9 +114,9 @@ function processNextPage(doc: Document, url: string) {
     // Move children
     const fragment = document.createDocumentFragment();
     Array.from(newContainer.children).forEach(child => {
-        // Skip next/prev links in the imported content to avoid clutter?
-        // For now, import everything.
-        fragment.appendChild(document.importNode(child, true));
+      // Skip next/prev links in the imported content to avoid clutter?
+      // For now, import everything.
+      fragment.appendChild(document.importNode(child, true));
     });
     pageWrapper.appendChild(fragment);
     
@@ -146,31 +147,31 @@ function processNextPage(doc: Document, url: string) {
       contentContainer.appendChild(endMsg);
     }
   } else {
-      console.warn("[AutoPaginator] Could not identify content in fetched page.");
+    console.info("[AutoPaginator] Could not identify content in fetched page.");
   }
 }
 
 function setupHistoryObserver(element: HTMLElement, url: string) {
-    // Observe when this element takes up the majority of the viewport?
-    // Or just when it hits the top?
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting && entry.intersectionRatio > 0.1) {
-                // Update URL
-                console.log("[AutoPaginator] Scrolled to:", url);
-                history.replaceState(null, '', url);
-            }
-        });
-    }, { threshold: [0.1, 0.5] });
+  // Observe when this element takes up the majority of the viewport?
+  // Or just when it hits the top?
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && entry.intersectionRatio > 0.1) {
+        // Update URL
+        console.log("[AutoPaginator] Scrolled to:", url);
+        history.replaceState(null, '', url);
+      }
+    });
+  }, { threshold: [0.1, 0.5] });
     
-    observer.observe(element);
+  observer.observe(element);
 }
 
 // Safety: prevent running in frames?
 if (window.self === window.top) {
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 }
