@@ -1,25 +1,39 @@
 /**
- * Evaluates an XPath and returns the first matching Element.
+ * Evaluates an XPath and returns all matching Elements.
  */
-export function getElementByXPath(xpath: string, context: Node = document): Element | null {
+export function getElementsByXPath(xpath: string, context: Node = document): Element[] {
   try {
-    const result = document.evaluate(xpath, context, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-    return result.singleNodeValue as Element;
+    const result = document.evaluate(xpath, context, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    const elements: Element[] = [];
+    for (let i = 0; i < result.snapshotLength; i++) {
+      const el = result.snapshotItem(i);
+      if (el instanceof Element) {
+        elements.push(el);
+      }
+    }
+    return elements;
   } catch (e) {
     console.error("XPath evaluation failed:", xpath, e);
-    return null;
+    return [];
   }
 }
 
-export function findContentContainer(doc: Document, selector?: string): HTMLElement | null {
+/**
+ * Evaluates an XPath and returns the first matching Element.
+ */
+export function getElementByXPath(xpath: string, context: Node = document): Element | null {
+  const results = getElementsByXPath(xpath, context);
+  return results[0] ?? null;
+}
+
+export function findContentContainers(doc: Document, selector?: string): HTMLElement[] {
   // 0. Manual XPath/Selector Override
   if (selector) {
     if (selector.startsWith('/') || selector.startsWith('(')) {
-      const el = getElementByXPath(selector, doc);
-      if (el instanceof HTMLElement) return el;
+      return getElementsByXPath(selector, doc).filter((el): el is HTMLElement => el instanceof HTMLElement);
     } else {
-      const el = doc.querySelector(selector);
-      if (el instanceof HTMLElement) return el;
+      const els = doc.querySelectorAll(selector);
+      return Array.from(els).filter((el): el is HTMLElement => el instanceof HTMLElement);
     }
   }
 
@@ -43,17 +57,11 @@ export function findContentContainer(doc: Document, selector?: string): HTMLElem
 
     // Rough check: must have some content.
     if (el instanceof HTMLElement && el.innerText.length > 100) {
-      return el;
+      return [el];
     }
   }
 
-  // 2. Heuristic: Parent of the Next Button?
-  // We don't have the next button here as argument.
-  // Maybe we should pass it?
-  
-  // 3. Largest text block heuristic (Simplified)
-  // Find div with most text?
-  return null;
+  return [];
 }
 
 /**

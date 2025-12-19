@@ -1,5 +1,5 @@
 import { findNextPageLink } from '../utils/next-page';
-import { findContentContainer, getElementByXPath } from '../utils/dom';
+import { findContentContainers, getElementByXPath } from '../utils/dom';
 import { storage, isBlacklisted, type SiteConfig } from '../utils/storage';
 
 let isLoading = false;
@@ -44,32 +44,50 @@ async function init() {
   nextPageUrl = nextLink.href;
   visitedUrls.add(location.href);
 
-  // 2. Find Main Content Container
-  contentContainer = findContentContainer(document, currentSiteConfig?.pageElement);
-  if (!contentContainer) {
+  // 2. Find Main Content Containers
+  const containers = findContentContainers(document, currentSiteConfig?.pageElement);
+  if (containers.length === 0) {
     console.warn("[AutoPaginator] Content container not found. Aborting.");
     return;
   }
+  
+  // Set contentContainer to the parent of the first matched container
+  // This ensures new pages are appended as siblings to the original content
+  const firstContainer = containers[0];
+  if (!firstContainer) return;
+  
+  contentContainer = (firstContainer.parentElement || document.body) as HTMLElement;
 
   // BUGFIX: Set up observer for the first page too
   const originalUrl = location.href;
   const firstPageWrapper = document.createElement('div');
-  // Copy classes from the original container to the wrapper to preserve styling
-  firstPageWrapper.className = contentContainer.className;
+  
+  // Copy classes from the first container to the wrapper to preserve styling
+  firstPageWrapper.className = firstContainer.className;
   firstPageWrapper.id = 'autopaginator-first-page';
   firstPageWrapper.dataset.url = originalUrl;
   
-  // Move all children (except our own potential additions) into the wrapper
-  // But wait, it's better to just observe the existing children if possible, 
-  // or wrap everything currently in the container.
-  while (contentContainer.firstChild) {
-    firstPageWrapper.appendChild(contentContainer.firstChild);
+  const insertionPoint = firstContainer;
+  if (insertionPoint.parentNode) {
+    insertionPoint.parentNode.insertBefore(firstPageWrapper, insertionPoint);
   }
-  contentContainer.appendChild(firstPageWrapper);
+
+  // Move all matched containers into the wrap.
+  containers.forEach(c => {
+    firstPageWrapper.appendChild(c);
+  });
   setupHistoryObserver(firstPageWrapper, originalUrl);
 
   // 3. Setup Trigger
+  // Add a sentinel as a reliable fallback even for the first page
+  const firstSentinel = document.createElement('div');
+  firstSentinel.style.height = '1px';
+  firstSentinel.style.width = '1px';
+  firstSentinel.style.visibility = 'hidden';
+  firstPageWrapper.appendChild(firstSentinel);
+  
   setupNextLinkObserver(nextLink);
+  setupNextLinkObserver(firstSentinel);
 }
 
 
@@ -82,7 +100,7 @@ function setupNextLinkObserver(element: HTMLElement) {
     }
   }, {
     root: null,
-    rootMargin: '400px', // Trigger well before the link hits the viewport
+    rootMargin: '600px', // Increased margin for smoother loading
     threshold: 0.1
   });
   
@@ -119,11 +137,15 @@ async function triggerFetch() {
 }
 
 function processNextPage(doc: Document, url: string) {
-  const newContainer = findContentContainer(doc, currentSiteConfig?.pageElement);
-  
-  if (newContainer && contentContainer) {
+  const newContainers = findContentContainers(doc, currentSiteConfig?.pageElement);
+  const fetchedNextLink = findNextPageLink(doc, currentSiteConfig?.nextLink);
+
+  if (newContainers.length > 0 && contentContainer) {
     const pageWrapper = document.createElement('div');
-    pageWrapper.className = newContainer.className;
+    const templateContainer = newContainers[0];
+    if (templateContainer) {
+      pageWrapper.className = templateContainer.className;
+    }
     pageWrapper.classList.add('autopaginator-page');
     pageWrapper.dataset.url = url;
     pageWrapper.style.marginTop = '20px';
@@ -131,8 +153,8 @@ function processNextPage(doc: Document, url: string) {
     pageWrapper.innerHTML = `<!-- Page: ${url} -->`;
     
     const fragment = document.createDocumentFragment();
-    Array.from(newContainer.children).forEach(child => {
-      fragment.appendChild(document.importNode(child, true));
+    newContainers.forEach(container => {
+      fragment.appendChild(document.importNode(container, true));
     });
     pageWrapper.appendChild(fragment);
     
@@ -149,12 +171,26 @@ function processNextPage(doc: Document, url: string) {
     }
 
     setupHistoryObserver(pageWrapper, url);
-    
     visitedUrls.add(url);
-    const newNextLink = findNextPageLink(doc, currentSiteConfig?.nextLink);
-    if (newNextLink) {
-      nextPageUrl = newNextLink.href;
-      setupNextLinkObserver(newNextLink);
+
+    // Update nextPageUrl from the FETCHED document
+    if (fetchedNextLink) {
+      nextPageUrl = fetchedNextLink.href;
+      
+      // Find the corresponding live link in the document to observe it
+      const liveNextLink = findNextPageLink(document, currentSiteConfig?.nextLink);
+      if (liveNextLink && liveNextLink.href === nextPageUrl) {
+        setupNextLinkObserver(liveNextLink);
+      } else {
+        // Fallback: If we can't find a matching live link (e.g. it's outside the container),
+        // we use a sentinel at the end of the wrapper to trigger the next fetch.
+        const sentinel = document.createElement('div');
+        sentinel.style.height = '1px';
+        sentinel.style.width = '1px';
+        sentinel.style.visibility = 'hidden';
+        pageWrapper.appendChild(sentinel);
+        setupNextLinkObserver(sentinel);
+      }
     } else {
       nextPageUrl = null;
       const endMsg = document.createElement('div');
