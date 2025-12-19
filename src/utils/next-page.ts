@@ -33,22 +33,34 @@ export function findNextPageLink(doc: Document = document): HTMLAnchorElement | 
     const className = link.className.toLowerCase();
     const id = link.id.toLowerCase();
 
-    // Text Match
+    // Ancestor checking helper
+    const checkAncestor = (el: HTMLElement | null, depth: number = 0): number => {
+      if (!el || depth > 3) return 0;
+      let ancestorScore = 0;
+      const aClass = el.className.toLowerCase();
+      const aId = el.id.toLowerCase();
+
+      if (strongKeywords.some(k => aClass.includes(k) || aId.includes(k))) ancestorScore += 10;
+      if (weakKeywords.some(k => aClass.includes(k) || aId.includes(k))) ancestorScore += 5;
+      if (negativeKeywords.some(k => aClass.includes(k) || aId.includes(k))) ancestorScore -= 50;
+
+      return ancestorScore + checkAncestor(el.parentElement as HTMLElement | null, depth + 1);
+    };
+
+    // Text Match (Anchor itself)
     if (strongKeywords.some(k => text === k)) score += 50;
     else if (strongKeywords.some(k => text.includes(k))) score += 20;
     else if (weakKeywords.some(k => text === k)) score += 10;
 
-    // Class/ID Match
-    if (className.includes('next') || id.includes('next')) score += 15;
+    // Class/ID Match (Anchor itself)
+    if (strongKeywords.some(k => className.includes(k) || id.includes(k))) score += 15;
     if (className.includes('pagination') || className.includes('pager')) score += 5;
 
-    // Negative Match
-    if (negativeKeywords.some(k => text.includes(k)) || className.includes('prev')) score -= 100;
+    // Ancestor Score
+    score += checkAncestor(link.parentElement as HTMLElement | null);
 
-    // Position Boost (Next button usually at bottom)
-    // We can't easily check 'bottom' relative to page without window context, but DOM order matters.
-    // Later links in DOM are slightly more likely to be Next if scores are tied?
-    // Just keep existing best.
+    // Negative Match (Anchor itself)
+    if (negativeKeywords.some(k => text.includes(k)) || className.includes('prev')) score -= 100;
 
     if (score > maxScore) {
       maxScore = score;
