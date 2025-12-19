@@ -51,6 +51,21 @@ async function init() {
     return;
   }
 
+  // BUGFIX: Set up observer for the first page too
+  const originalUrl = location.href;
+  const firstPageWrapper = document.createElement('div');
+  firstPageWrapper.id = 'autopaginator-first-page';
+  firstPageWrapper.dataset.url = originalUrl;
+  
+  // Move all children (except our own potential additions) into the wrapper
+  // But wait, it's better to just observe the existing children if possible, 
+  // or wrap everything currently in the container.
+  while (contentContainer.firstChild) {
+    firstPageWrapper.appendChild(contentContainer.firstChild);
+  }
+  contentContainer.appendChild(firstPageWrapper);
+  setupHistoryObserver(firstPageWrapper, originalUrl);
+
   // 3. Setup Trigger
   createSentinel();
 }
