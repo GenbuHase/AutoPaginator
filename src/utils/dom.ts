@@ -1,4 +1,28 @@
-export function findContentContainer(doc: Document): HTMLElement | null {
+/**
+ * Evaluates an XPath and returns the first matching Element.
+ */
+export function getElementByXPath(xpath: string, context: Node = document): Element | null {
+  try {
+    const result = document.evaluate(xpath, context, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+    return result.singleNodeValue as Element;
+  } catch (e) {
+    console.error("XPath evaluation failed:", xpath, e);
+    return null;
+  }
+}
+
+export function findContentContainer(doc: Document, selector?: string): HTMLElement | null {
+  // 0. Manual XPath/Selector Override
+  if (selector) {
+    if (selector.startsWith('/') || selector.startsWith('(')) {
+      const el = getElementByXPath(selector, doc);
+      if (el instanceof HTMLElement) return el;
+    } else {
+      const el = doc.querySelector(selector);
+      if (el instanceof HTMLElement) return el;
+    }
+  }
+
   // 1. Explicit Common Selectors
   const candidates = [
     'main',

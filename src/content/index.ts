@@ -1,10 +1,11 @@
 import { findNextPageLink } from '../utils/next-page';
-import { findContentContainer } from '../utils/dom';
-import { storage, isBlacklisted } from '../utils/storage';
+import { findContentContainer, getElementByXPath } from '../utils/dom';
+import { storage, isBlacklisted, type SiteConfig } from '../utils/storage';
 
 let isLoading = false;
 let nextPageUrl: string | null = null;
 let contentContainer: HTMLElement | null = null;
+let currentSiteConfig: SiteConfig | undefined;
 
 // Store visited URLs to prevent loops
 const visitedUrls = new Set<string>();
@@ -18,31 +19,42 @@ async function init() {
     return;
   }
   
-  if (isBlacklisted(location.href, settings.blacklist)) {
+  const url = location.href;
+  if (isBlacklisted(url, settings.blacklist)) {
     console.log("[AutoPaginator] Disabled on this domain.");
     return;
   }
 
+  // Find matching SITEINFO
+  currentSiteConfig = settings.siteInfo.find(config => {
+    try {
+      return new RegExp(config.url).test(url);
+    } catch (e) {
+      console.error("Invalid regex in SITEINFO:", config.url, e);
+      return false;
+    }
+  });
+
   // 1. Find Next Page Link
-  const nextLink = findNextPageLink(document);
+  const nextLink = findNextPageLink(document, currentSiteConfig?.nextLink);
   if (!nextLink) {
     console.log("[AutoPaginator] No next page link found.");
     return;
   }
-
   nextPageUrl = nextLink.href;
   visitedUrls.add(location.href);
 
   // 2. Find Main Content Container
-  contentContainer = findContentContainer(document);
+  contentContainer = findContentContainer(document, currentSiteConfig?.pageElement);
   if (!contentContainer) {
     console.warn("[AutoPaginator] Content container not found. Aborting.");
     return;
   }
 
-  // 3. Setup Scroll Trigger (Sentinel)
+  // 3. Setup Trigger
   createSentinel();
 }
+
 
 function createSentinel() {
   const sentinel = document.createElement('div');
@@ -67,43 +79,42 @@ function createSentinel() {
 async function handleIntersect(entries: IntersectionObserverEntry[]) {
   const entry = entries[0];
   if (entry?.isIntersecting && !isLoading && nextPageUrl) {
-    if (visitedUrls.has(nextPageUrl)) {
-      console.warn("[AutoPaginator] Loop detected or already visited:", nextPageUrl);
-      nextPageUrl = null;
-      return;
-    }
+    await triggerFetch();
+  }
+}
 
-    isLoading = true;
-    console.log("[AutoPaginator] Fetching:", nextPageUrl);
+async function triggerFetch() {
+  if (!nextPageUrl || isLoading) return;
+  
+  if (visitedUrls.has(nextPageUrl)) {
+    console.warn("[AutoPaginator] Loop detected or already visited:", nextPageUrl);
+    nextPageUrl = null;
+    return;
+  }
+
+  isLoading = true;
+  console.log("[AutoPaginator] Fetching:", nextPageUrl);
+  
+  try {
+    const response = await fetch(nextPageUrl);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     
-    // UI Feedback (Sentinel is already "Loading...")
+    const text = await response.text();
+    const parser = new DOMParser();
+    const nextDoc = parser.parseFromString(text, 'text/html');
     
-    try {
-      const response = await fetch(nextPageUrl);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      
-      const text = await response.text();
-      const parser = new DOMParser();
-      const nextDoc = parser.parseFromString(text, 'text/html');
-      
-      processNextPage(nextDoc, nextPageUrl);
-      
-    } catch (e) {
-      console.error("[AutoPaginator] Fetch failed:", e);
-    } finally {
-      isLoading = false;
-    }
+    processNextPage(nextDoc, nextPageUrl);
+  } catch (e) {
+    console.error("[AutoPaginator] Fetch failed:", e);
+  } finally {
+    isLoading = false;
   }
 }
 
 function processNextPage(doc: Document, url: string) {
-  // Extract content
-  // We try to find the container matching our current contentContainer's selector if possible, 
-  // or re-run findContentContainer logic on new doc.
-  const newContainer = findContentContainer(doc);
+  const newContainer = findContentContainer(doc, currentSiteConfig?.pageElement);
   
   if (newContainer && contentContainer) {
-    // Create a page wrapper for history handling
     const pageWrapper = document.createElement('div');
     pageWrapper.classList.add('autopaginator-page');
     pageWrapper.dataset.url = url;
@@ -111,35 +122,37 @@ function processNextPage(doc: Document, url: string) {
     pageWrapper.style.borderTop = '1px dashed #ccc';
     pageWrapper.innerHTML = `<!-- Page: ${url} -->`;
     
-    // Move children
     const fragment = document.createDocumentFragment();
     Array.from(newContainer.children).forEach(child => {
-      // Skip next/prev links in the imported content to avoid clutter?
-      // For now, import everything.
       fragment.appendChild(document.importNode(child, true));
     });
     pageWrapper.appendChild(fragment);
     
-    // Remove old sentinel
+    // Remove old triggers
     const oldSentinel = document.getElementById('autopaginator-sentinel');
     if (oldSentinel) oldSentinel.remove();
     
-    // Append new page
-    contentContainer.appendChild(pageWrapper);
-    
-    // Setup History Observer for this page
+    // Determine insertion point
+    if (currentSiteConfig?.insertBefore) {
+      const before = getElementByXPath(currentSiteConfig.insertBefore, document);
+      if (before && before.parentNode) {
+        before.parentNode.insertBefore(pageWrapper, before);
+      } else {
+        contentContainer.appendChild(pageWrapper);
+      }
+    } else {
+      contentContainer.appendChild(pageWrapper);
+    }
+
     setupHistoryObserver(pageWrapper, url);
     
-    // Update State for next fetch
     visitedUrls.add(url);
-    const newNextLink = findNextPageLink(doc);
+    const newNextLink = findNextPageLink(doc, currentSiteConfig?.nextLink);
     if (newNextLink) {
       nextPageUrl = newNextLink.href;
-      // Re-add sentinel
       createSentinel();
     } else {
       nextPageUrl = null;
-      // End indicator
       const endMsg = document.createElement('div');
       endMsg.textContent = 'No more pages.';
       endMsg.style.textAlign = 'center';
@@ -152,13 +165,9 @@ function processNextPage(doc: Document, url: string) {
 }
 
 function setupHistoryObserver(element: HTMLElement, url: string) {
-  // Observe when this element takes up the majority of the viewport?
-  // Or just when it hits the top?
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting && entry.intersectionRatio > 0.1) {
-        // Update URL
-        console.log("[AutoPaginator] Scrolled to:", url);
         history.replaceState(null, '', url);
       }
     });
@@ -167,7 +176,6 @@ function setupHistoryObserver(element: HTMLElement, url: string) {
   observer.observe(element);
 }
 
-// Safety: prevent running in frames?
 if (window.self === window.top) {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

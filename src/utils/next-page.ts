@@ -1,7 +1,20 @@
+import { getElementByXPath } from './dom';
+
 /**
- * Finds the link to the next page using various heuristics.
+ * Finds the link to the next page using various heuristics or an explicit selector.
  */
-export function findNextPageLink(doc: Document = document): HTMLAnchorElement | null {
+export function findNextPageLink(doc: Document = document, selector?: string): HTMLAnchorElement | null {
+  // 0. Manual Selector Override (Higher priority)
+  if (selector) {
+    let el: Element | null = null;
+    if (selector.startsWith('/') || selector.startsWith('(')) {
+      el = getElementByXPath(selector, doc);
+    } else {
+      el = doc.querySelector(selector);
+    }
+    if (el instanceof HTMLAnchorElement) return el;
+  }
+
   // 1. <link rel="next"> (Head) - Good for URL, but we need an element if possible?
   // Actually, we usually just need the URL to fetch. But for UI, highlighting the button is nice.
   // Let's stick to returning an anchor.
