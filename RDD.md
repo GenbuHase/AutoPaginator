@@ -61,7 +61,7 @@
 | 言語 | TypeScript | 複雑なDOM操作やメッセージ通信における型安全性の確保。 |
 | ビルドツール | Vite + @crxjs/vite-plugin | 開発中のホットリロード(HMR)が強力で、拡張機能開発のストレスが激減します。 |
 | マニフェスト | Manifest V3 | 現在のChrome拡張機能の標準規格。Service Workerの活用が鍵。 |
-| UIライブラリ | Vue.js | ポップアップや設定画面の作成用。げんぶさんの馴染みがある方でOK。 |
+| UIライブラリ | Vue.js | ポップアップや設定画面の作成用。 |
 | CSS | Tailwind CSS | 拡張機能内のUIを迅速に構築でき、CSSの干渉を防ぎやすい(Shadow DOM活用時)。 |
 | 通信 | Fetch API | 次ページのHTMLを取得するため。 |
 | パーサー | DOMParser | 取得した文字列(HTML)をDOMオブジェクトに変換し、必要な要素を抽出するため。 |
