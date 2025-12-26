@@ -3,33 +3,22 @@
     <header class="flex justify-between items-center mb-4">
       <h1 class="text-lg font-bold text-indigo-700">Auto Paginator</h1>
 
-      <div 
-        @click="toggleEnabled"
-        class="cursor-pointer relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-        :class="settings.enabled ? 'bg-indigo-600' : 'bg-gray-200'"
-      >
-        <span 
-          class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
-          :class="settings.enabled ? 'translate-x-6' : 'translate-x-1'"
-        />
+      <div @click="toggleEnabled" class="cursor-pointer relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" :class="settings.enabled ? 'bg-indigo-600' : 'bg-gray-200'">
+        <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform" :class="settings.enabled ? 'translate-x-6' : 'translate-x-1'" />
       </div>
     </header>
 
-    <div v-if="!settings.enabled" class="bg-yellow-100 text-yellow-800 p-2 rounded mb-4 text-center">
-      Extension is disabled globally.
-    </div>
+    <div v-if="!settings.enabled" class="bg-yellow-100 text-yellow-800 p-2 rounded mb-4 text-center">Extension is disabled globally.</div>
 
     <!-- Main View -->
     <div v-if="!editingSite" class="space-y-4">
       <div class="text-center">
-        <p v-if="currentDomain" class="text-gray-600 mb-2">Current Page: <span class="font-mono text-xs">{{ currentDomain }}</span></p>
+        <p v-if="currentDomain" class="text-gray-600 mb-2">
+          Current Page: <span class="font-mono text-xs">{{ currentDomain }}</span>
+        </p>
         <div class="flex justify-center gap-2">
-          <button 
-            @click="addToBlacklist"
-            class="text-xs py-1 px-2 rounded"
-            :class="isCurrentBlacklisted ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700 hover:bg-red-200'"
-          >
-            {{ isCurrentBlacklisted ? 'Blacklisted' : 'Disable on this site' }}
+          <button @click="addToBlacklist" class="text-xs py-1 px-2 rounded" :class="isCurrentBlacklisted ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700 hover:bg-red-200'">
+            {{ isCurrentBlacklisted ? "Blacklisted" : "Disable on this site" }}
           </button>
         </div>
       </div>
@@ -38,10 +27,10 @@
 
       <div class="flex justify-center gap-4">
         <button @click="toggleBlacklist" class="text-indigo-600 hover:underline text-xs">
-          {{ showBlacklistManager ? 'Hide List' : 'Blacklist' }}
+          {{ showBlacklistManager ? "Hide List" : "Blacklist" }}
         </button>
         <button @click="toggleSiteInfoManager" class="text-indigo-600 hover:underline text-xs">
-          {{ showSiteInfoManager ? 'Hide Manager' : 'SITEINFO' }}
+          {{ showSiteInfoManager ? "Hide Manager" : "SITEINFO" }}
         </button>
         <button @click="exportData" class="text-indigo-600 hover:underline text-xs">Export</button>
         <button @click="importData" class="text-indigo-600 hover:underline text-xs">Import</button>
@@ -50,52 +39,33 @@
       <!-- Blacklist Manager -->
       <div v-if="showBlacklistManager" class="mt-4">
         <p class="mb-1 text-xs text-gray-500">Blacklisted Domains:</p>
-        <textarea 
-          v-model="blacklistInput" 
-          class="w-full text-xs p-2 border rounded h-24 font-mono mb-2"
-          placeholder="example.com"
-        ></textarea>
-        <button 
-          @click="saveBlacklist"
-          class="w-full bg-indigo-600 text-white py-1 rounded hover:bg-indigo-700 text-xs"
-        >
-          Update Blacklist
-        </button>
+        <textarea v-model="blacklistInput" class="w-full text-xs p-2 border rounded h-24 font-mono mb-2" placeholder="example.com"></textarea>
+        <button @click="saveBlacklist" class="w-full bg-indigo-600 text-white py-1 rounded hover:bg-indigo-700 text-xs">Update Blacklist</button>
       </div>
 
       <!-- SITEINFO Manager List -->
       <div v-if="showSiteInfoManager" class="mt-4 bg-white p-3 rounded border shadow-inner max-h-80 overflow-y-auto">
         <div class="flex justify-between items-center mb-2">
           <h3 class="font-bold text-xs text-indigo-700">SITEINFO List</h3>
-          <button @click="startAdding" class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded hover:bg-indigo-200">
-            + Add New
-          </button>
+          <button @click="startAdding" class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded hover:bg-indigo-200">+ Add New</button>
         </div>
 
-        <div v-if="settings.siteInfo.length === 0" class="text-xs text-gray-400 text-center py-4">
-          No configurations found.
-        </div>
+        <div v-if="settings.siteInfo.length === 0" class="text-xs text-gray-400 text-center py-4">No configurations found.</div>
 
-        <div 
-          v-for="(config, index) in settings.siteInfo" 
-          :key="index" 
+        <div
+          v-for="(config, index) in settings.siteInfo"
+          :key="index"
           class="mb-2 p-2 border rounded hover:bg-gray-50 group relative cursor-move flex items-center gap-2"
           draggable="true"
           @dragstart="handleDragStart(index)"
           @dragover.prevent="handleDragOver(index)"
           @drop="handleDrop"
-          :class="{ 
+          :class="{
             'opacity-50 border-indigo-400 border-dashed bg-indigo-50': draggedIndex === index,
             'bg-gray-100 opacity-75': !config.enabled
-          }"
-        >
+          }">
           <!-- Enable/Disable Toggle -->
-          <button 
-            @click.stop="config.enabled = !config.enabled"
-            class="w-4 h-4 rounded-full border transition-colors flex-shrink-0"
-            :class="config.enabled ? 'bg-green-500 border-green-600' : 'bg-gray-300 border-gray-400'"
-            :title="config.enabled ? 'Enabled' : 'Disabled'"
-          ></button>
+          <button @click.stop="config.enabled = !config.enabled" class="w-4 h-4 rounded-full border transition-colors flex-shrink-0" :class="config.enabled ? 'bg-green-500 border-green-600' : 'bg-gray-300 border-gray-400'" :title="config.enabled ? 'Enabled' : 'Disabled'"></button>
 
           <div class="flex-1 min-w-0 pointer-events-none">
             <div class="flex items-center gap-1">
@@ -103,7 +73,7 @@
             </div>
             <div class="text-[10px] text-gray-500 font-mono truncate">{{ config.url }}</div>
           </div>
-          
+
           <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
             <button @click.stop="editSite(index)" class="text-indigo-600 hover:text-indigo-800 text-xs">Edit</button>
             <button @click.stop="deleteSiteConfig(index)" class="text-red-600 hover:text-red-800 text-xs">Del</button>
@@ -114,8 +84,8 @@
 
     <!-- Edit/Add Form -->
     <div v-else class="space-y-3">
-      <h2 class="font-bold text-indigo-800 text-center">{{ editingIndex === -1 ? 'Add New SITEINFO' : 'Edit SITEINFO' }}</h2>
-      
+      <h2 class="font-bold text-indigo-800 text-center">{{ editingIndex === -1 ? "Add New SITEINFO" : "Edit SITEINFO" }}</h2>
+
       <div class="space-y-2 max-h-[400px] overflow-y-auto pr-2">
         <div>
           <label class="block text-[11px] text-gray-500 mb-1">Name</label>
@@ -158,15 +128,15 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted, watch, toRaw, computed } from 'vue';
-  import { storage, type AppSettings, type SiteConfig } from '../utils/storage';
+  import { ref, onMounted, watch, toRaw, computed } from "vue";
+  import { storage, type AppSettings, type SiteConfig } from "../utils/storage";
 
   const settings = ref<AppSettings>({ enabled: true, blacklist: [], siteInfo: [] });
-  const currentDomain = ref('');
+  const currentDomain = ref("");
   const showBlacklistManager = ref(false);
   const showSiteInfoManager = ref(false);
-  const blacklistInput = ref('');
-  
+  const blacklistInput = ref("");
+
   // Drag and drop state
   const draggedIndex = ref<number | null>(null);
 
@@ -174,13 +144,13 @@
   const editingSite = ref(false);
   const editingIndex = ref(-1);
   const form = ref<SiteConfig>({
-    name: '',
-    url: '',
+    name: "",
+    url: "",
     enabled: true,
-    exampleUrl: '',
-    pageElement: '',
-    nextLink: '',
-    insertBefore: ''
+    exampleUrl: "",
+    pageElement: "",
+    nextLink: "",
+    insertBefore: ""
   });
 
   const isCurrentBlacklisted = computed(() => {
@@ -189,7 +159,7 @@
 
   onMounted(async () => {
     await loadSettings();
-    
+
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tabs[0]?.url) {
       try {
@@ -200,12 +170,16 @@
 
   async function loadSettings() {
     settings.value = await storage.get();
-    blacklistInput.value = settings.value.blacklist.join('\n');
+    blacklistInput.value = settings.value.blacklist.join("\n");
   }
 
-  watch(settings, (newVal) => {
-    storage.set(toRaw(newVal));
-  }, { deep: true });
+  watch(
+    settings,
+    newVal => {
+      storage.set(toRaw(newVal));
+    },
+    { deep: true }
+  );
 
   function toggleEnabled() {
     settings.value.enabled = !settings.value.enabled;
@@ -222,7 +196,10 @@
   }
 
   function saveBlacklist() {
-    const domains = blacklistInput.value.split('\n').map(s => s.trim()).filter(Boolean);
+    const domains = blacklistInput.value
+      .split("\n")
+      .map(s => s.trim())
+      .filter(Boolean);
     settings.value.blacklist = domains;
     showBlacklistManager.value = false;
   }
@@ -234,7 +211,7 @@
       } else {
         settings.value.blacklist.push(currentDomain.value);
       }
-      blacklistInput.value = settings.value.blacklist.join('\n');
+      blacklistInput.value = settings.value.blacklist.join("\n");
     }
   }
 
@@ -245,7 +222,7 @@
 
   function handleDragOver(index: number) {
     if (draggedIndex.value === null || draggedIndex.value === index) return;
-    
+
     // Move item in array while dragging for real-time feedback
     const items = [...settings.value.siteInfo];
     const item = items.splice(draggedIndex.value, 1)[0];
@@ -264,13 +241,13 @@
   function startAdding() {
     editingIndex.value = -1;
     form.value = {
-      name: '',
+      name: "",
       url: `^https?://${currentDomain.value}/.*`,
       enabled: true,
-      exampleUrl: '',
-      pageElement: '',
-      nextLink: '',
-      insertBefore: ''
+      exampleUrl: "",
+      pageElement: "",
+      nextLink: "",
+      insertBefore: ""
     };
     editingSite.value = true;
   }
@@ -283,10 +260,10 @@
         name: config.name,
         url: config.url,
         enabled: config.enabled !== false, // Default to true if somehow missing
-        exampleUrl: config.exampleUrl || '',
+        exampleUrl: config.exampleUrl || "",
         pageElement: config.pageElement,
         nextLink: config.nextLink,
-        insertBefore: config.insertBefore || ''
+        insertBefore: config.insertBefore || ""
       };
       editingSite.value = true;
     }
@@ -315,29 +292,29 @@
 
   async function exportData() {
     const json = await storage.export();
-    const blob = new Blob([json], { type: 'application/json' });
+    const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `autopaginator_settings_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `autopaginator_settings_${new Date().toISOString().split("T")[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
   async function importData() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
     input.onchange = async (e: any) => {
       const file = e.target.files[0];
       if (!file) return;
       const text = await file.text();
       const success = await storage.import(text);
       if (success) {
-        alert('Settings imported successfully!');
+        alert("Settings imported successfully!");
         await loadSettings();
       } else {
-        alert('Failed to import settings. Invalid file format.');
+        alert("Failed to import settings. Invalid file format.");
       }
     };
     input.click();
