@@ -29,7 +29,7 @@ export function getElementByXPath(xpath: string, context: Node = document): Elem
 export function findContentContainers(doc: Document, selector?: string): HTMLElement[] {
   // 0. Manual XPath/Selector Override
   if (selector) {
-    if (selector.startsWith('/') || selector.startsWith('(')) {
+    if (selector.startsWith("/") || selector.startsWith("(")) {
       return getElementsByXPath(selector, doc).filter((el): el is HTMLElement => el instanceof HTMLElement);
     } else {
       const els = doc.querySelectorAll(selector);
@@ -39,17 +39,18 @@ export function findContentContainers(doc: Document, selector?: string): HTMLEle
 
   // 1. Explicit Common Selectors
   const candidates = [
-    'main',
+    //
+    "main",
     '[role="main"]',
-    'article',
-    '#main',
-    '#content',
-    '#main-content',
-    '.main-content',
-    '.post-content',
+    "article",
+    "#main",
+    "#content",
+    "#main-content",
+    ".main-content",
+    ".post-content",
     ".article-body",
-    '.blog-posts',
-    '.search-results'
+    ".blog-posts",
+    ".search-results"
   ];
 
   for (const selector of candidates) {
@@ -70,9 +71,9 @@ export function findContentContainers(doc: Document, selector?: string): HTMLEle
  */
 export function cleanContent(element: HTMLElement) {
   // Remove scripts
-  const scripts = element.querySelectorAll('script');
+  const scripts = element.querySelectorAll("script");
   scripts.forEach(s => s.remove());
-  
+
   // Remove next/prev links to avoid duplicates
   // (This might be too aggressive if valid links are removed, but for infinite scroll it's usually desired)
   // We can filter this later.
