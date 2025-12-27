@@ -1,0 +1,14 @@
+{
+  "appName": {
+    "message": "Auto Paginator",
+    "description": "拡張機能の名前"
+  },
+  "appDesc": {
+    "message": "複数ページにわたるWebページを1枚に自動で連結し、スクロールだけで閲覧可能にするページ読み込み支援拡張機能",
+    "description": "拡張機能の説明"
+  },
+  "eol": {
+    "message": "これ以上ページはありません",
+    "description": "読み込むページがなくなったときに表示されるメッセージ"
+  }
+}

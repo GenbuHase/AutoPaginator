@@ -1,6 +1,5 @@
 {
   "version": "5.6.3",
-
   "root": [
     "./src/content/index.ts",
     "./src/popup/main.ts",

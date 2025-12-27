@@ -1,4 +1,4 @@
-import { getElementByXPath } from './dom';
+import { getElementByXPath } from "./dom";
 
 /**
  * Finds the link to the next page using various heuristics or an explicit selector.
@@ -7,7 +7,7 @@ export function findNextPageLink(doc: Document = document, selector?: string): H
   // 0. Manual Selector Override (Higher priority)
   if (selector) {
     let el: Element | null = null;
-    if (selector.startsWith('/') || selector.startsWith('(')) {
+    if (selector.startsWith("/") || selector.startsWith("(")) {
       el = getElementByXPath(selector, doc);
     } else {
       el = doc.querySelector(selector);
@@ -24,7 +24,7 @@ export function findNextPageLink(doc: Document = document, selector?: string): H
   if (anchorRel instanceof HTMLAnchorElement) return anchorRel;
 
   // 3. Score-based Heuristics
-  const links = doc.querySelectorAll('a');
+  const links = doc.querySelectorAll("a");
   let bestCandidate: HTMLAnchorElement | null = null;
   let maxScore = 0;
 
@@ -37,9 +37,9 @@ export function findNextPageLink(doc: Document = document, selector?: string): H
     // Skip invisible or empty links
     const rect = link.getBoundingClientRect();
     if (rect.width === 0 && rect.height === 0 && link.textContent === "") return;
-    
-    const href = link.getAttribute('href');
-    if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:')) return;
+
+    const href = link.getAttribute("href");
+    if (!href || href.startsWith("#") || href.startsWith("javascript:") || href.startsWith("mailto:")) return;
 
     let score = 0;
     const text = link.textContent?.trim().toLowerCase() || "";
@@ -67,13 +67,13 @@ export function findNextPageLink(doc: Document = document, selector?: string): H
 
     // Class/ID Match (Anchor itself)
     if (strongKeywords.some(k => className.includes(k) || id.includes(k))) score += 15;
-    if (className.includes('pagination') || className.includes('pager')) score += 5;
+    if (className.includes("pagination") || className.includes("pager")) score += 5;
 
     // Ancestor Score
     score += checkAncestor(link.parentElement as HTMLElement | null);
 
     // Negative Match (Anchor itself)
-    if (negativeKeywords.some(k => text.includes(k)) || className.includes('prev')) score -= 100;
+    if (negativeKeywords.some(k => text.includes(k)) || className.includes("prev")) score -= 100;
 
     if (score > maxScore) {
       maxScore = score;

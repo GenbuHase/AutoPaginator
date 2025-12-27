@@ -4,7 +4,7 @@ export interface SiteConfig {
   enabled: boolean;
   exampleUrl?: string;
   pageElement: string; // XPath
-  nextLink: string;   // XPath
+  nextLink: string; // XPath
   insertBefore?: string; // XPath
 }
 
@@ -23,7 +23,7 @@ export const defaultSettings: AppSettings = {
 export const storage = {
   get: async (): Promise<AppSettings> => {
     try {
-      const data = await chrome.storage.local.get(['enabled', 'blacklist', 'siteInfo']) as Partial<AppSettings>;
+      const data = (await chrome.storage.local.get(["enabled", "blacklist", "siteInfo"])) as Partial<AppSettings>;
       return {
         enabled: data.enabled ?? defaultSettings.enabled,
         blacklist: data.blacklist ?? defaultSettings.blacklist,
@@ -49,7 +49,7 @@ export const storage = {
     try {
       const settings = JSON.parse(json) as AppSettings;
       // Basic validation
-      if (typeof settings.enabled !== 'boolean' || !Array.isArray(settings.blacklist)) {
+      if (typeof settings.enabled !== "boolean" || !Array.isArray(settings.blacklist)) {
         throw new Error("Invalid format");
       }
       await storage.set(settings);

@@ -1,0 +1,14 @@
+{
+  "appName": {
+    "message": "Auto Paginator",
+    "description": "The name of the extension"
+  },
+  "appDesc": {
+    "message": "Automatically loads the next page content and appends it to the current page, allowing infinite scrolling.",
+    "description": "The description of the extension"
+  },
+  "eol": {
+    "message": "You've reached the end",
+    "description": "Message displayed when there are no more pages to load"
+  }
+}
