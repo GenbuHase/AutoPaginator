@@ -195,7 +195,7 @@ function processNextPage(doc: Document, url: string) {
     } else {
       nextPageUrl = null;
       const endMsg = document.createElement("div");
-      endMsg.textContent = "No more pages.";
+      endMsg.textContent = chrome.i18n.getMessage("eol");
       endMsg.style.textAlign = "center";
       endMsg.style.padding = "20px";
       contentContainer.appendChild(endMsg);
