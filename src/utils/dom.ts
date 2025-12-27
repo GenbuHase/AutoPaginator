@@ -38,7 +38,20 @@ export function findContentContainers(doc: Document, selector?: string): HTMLEle
   }
 
   // 1. Explicit Common Selectors
-  const candidates = ["main", '[role="main"]', "article", "#main", "#content", "#main-content", ".main-content", ".post-content", ".article-body", ".blog-posts", ".search-results"];
+  const candidates = [
+    //
+    "main",
+    '[role="main"]',
+    "article",
+    "#main",
+    "#content",
+    "#main-content",
+    ".main-content",
+    ".post-content",
+    ".article-body",
+    ".blog-posts",
+    ".search-results"
+  ];
 
   for (const selector of candidates) {
     const el = doc.querySelector(selector);
